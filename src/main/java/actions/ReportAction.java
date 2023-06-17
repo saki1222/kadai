@@ -12,6 +12,8 @@ import constants.AttributeConst;
 import constants.ForwardConst;
 import constants.JpaConst;
 import constants.MessageConst;
+import models.Liked;
+import services.LikedService;
 import services.ReportService;
 
 /**
@@ -45,6 +47,17 @@ public class ReportAction extends ActionBase {
         //指定されたページ数の一覧画面に表示する日報データを取得
         int page = getPage();
         List<ReportView> reports = service.getAllPerPage(page);
+        LikedService liked=new LikedService();
+        EmployeeView loginEmployee = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);
+        for (int i = 0; i < reports.size(); i++) {
+		Liked data=liked.findOne(reports.get(i).getId(), loginEmployee.getId() );
+		if (data == null) {
+			reports.get(i).setLiked(0);
+		}else {
+			reports.get(i).setLiked(1);
+		}
+		}
+
 
         //全日報データの件数を取得
         long reportsCount = service.countAll();
@@ -112,7 +125,8 @@ public class ReportAction extends ActionBase {
                     getRequestParam(AttributeConst.REP_TITLE),
                     getRequestParam(AttributeConst.REP_CONTENT),
                     null,
-                    null);
+                    null,
+                    0);
 
             //日報情報登録
             List<String> errors = service.create(rv);
@@ -228,8 +242,45 @@ public class ReportAction extends ActionBase {
                     //一覧画面にリダイレクト
                     redirect(ForwardConst.ACT_REP, ForwardConst.CMD_INDEX);
 
+
                 }
             }
+
         }
-    }
+        public void liked() throws ServletException, IOException {
+             LikedService liked=new LikedService();
+             EmployeeView loginEmployee = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);;
+             getRequestParam(AttributeConst.REP_LIKED);
+             String s=getRequestParam(AttributeConst.REP_LIKED);
+             if (s.equals("0")) {
+            	 liked.create(toNumber(getRequestParam(AttributeConst.REP_ID)),
+                         loginEmployee.getId());
+			} else {
+			 liked.delete(toNumber(getRequestParam(AttributeConst.REP_ID)),
+					 loginEmployee.getId());
+			}
+
+
+
+            //idを条件に日報データを取得する
+            ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
+
+            if (rv == null) {
+                //該当の日報データが存在しない場合はエラー画面を表示
+                forward(ForwardConst.FW_ERR_UNKNOWN);
+
+            } else {
+
+                putRequestScope(AttributeConst.REPORT, rv); //取得した日報データ
+
+                //詳細画面を表示
+                redirect(ForwardConst.ACT_REP, ForwardConst.CMD_INDEX);
+
+            }
+        }
+
+       }
+
+
+
 

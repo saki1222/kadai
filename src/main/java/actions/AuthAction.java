@@ -1,3 +1,4 @@
+
 package actions;
 
 import java.io.IOException;
@@ -68,7 +69,7 @@ public void login() throws ServletException, IOException {
     //有効な従業員か認証する
     Boolean isValidEmployee = service.validateLogin(code, plainPass, pepper);
 
-    if (isValidEmployee) {
+ if (isValidEmployee) {
         //認証成功の場合
 
         //CSRF対策 tokenのチェック
